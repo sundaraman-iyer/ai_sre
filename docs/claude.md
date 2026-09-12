@@ -48,6 +48,10 @@ MCP, fine-tuning) are deliberately deferred to a later project.
 6. **Secrets never get committed.** All API keys live in a `.env` file (local) and as
    HF Space "Repository secrets" (deployed) — never hardcoded, never pasted into chat in
    full again, never committed to git. `.env` is in `.gitignore` from day one.
+7. **No direct pushes to `main`.** All code changes must be submitted via Pull Requests (PRs)
+   targeting the `main` branch. Direct pushes to `main` are disallowed.
+8. **Enforce code formatting and linting.** All Python code must pass automated `ruff`, `black`,
+   `isort`, and `flake8` checks enforced by GitHub Actions on every Pull Request.
 
 ---
 
@@ -173,6 +177,8 @@ runtime — the corpus is static for this project's scope.
 | Guardrails | Custom regex-based input callbacks (PII redaction, prompt-injection detection) | Built in the course, reused as-is |
 | Conversation memory | Upstash Redis (REST API, `upstash-redis` client), keyed by `session_id` | Free tier, persists across container restarts unlike an in-process dict |
 | Evaluation | LangSmith `client.evaluate(...)` + custom `correctness`/`relevance`/`groundedness` evaluators (LLM-as-judge via Groq) | Reused from course material |
+| Code Quality & Linting | Ruff, Black, isort, Flake8 | Configured in `pyproject.toml` and `.flake8` |
+| CI / Automation | GitHub Actions (`.github/workflows/ci.yml`) | Runs linters/formatters on all PRs targeting `main` |
 | Containerization | Docker | Single `Dockerfile`, CPU-only base image |
 | Deployment | Hugging Face Spaces, Docker SDK, CPU Basic | See Section 4 for why |
 | Docs/demo surface | FastAPI's auto-generated `/docs` (Swagger UI) | No frontend — see Rule 2 |
