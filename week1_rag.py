@@ -69,9 +69,9 @@ def format_context(documents: list[Document]) -> str:
 def message_content(response: Any) -> str:
     """Extract the textual content from LiteLLM's OpenAI-compatible response."""
     content = response.choices[0].message.content
-    if isinstance(content, str):
-        return content.strip()
-    return str(content).strip()
+    text = content.strip() if isinstance(content, str) else str(content).strip()
+    # Strip markdown bolding asterisks (**) for clean plain text formatting
+    return text.replace("**", "")
 
 
 def generate_answer(question: str, context: str) -> tuple[str, str]:
@@ -82,7 +82,8 @@ def generate_answer(question: str, context: str) -> tuple[str, str]:
             "content": (
                 "You are an SRE incident-analysis assistant. Answer only from the "
                 "provided excerpts. If the excerpts do not support an answer, say so. "
-                "Cite factual claims using [Source N]."
+                "Cite factual claims using [Source N]. Do not use markdown bolding "
+                "(double asterisks **) in your response; keep formatting clean and readable."
             ),
         },
         {

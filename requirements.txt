@@ -21,3 +21,5 @@ beautifulsoup4
 pandas
 litellm
 langchain-litellm
+fastapi
+uvicorn
