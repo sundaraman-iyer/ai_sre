@@ -21,7 +21,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from litellm import completion
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent
 CORPUS_DIR = PROJECT_ROOT / "data" / "corpus"
 QUESTION = "What caused GitHub's DNS outage, and how did the response make the impact worse?"

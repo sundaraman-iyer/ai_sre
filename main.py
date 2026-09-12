@@ -6,9 +6,9 @@ The vector store is initialized ONCE on startup during the app lifespan event.
 
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 import os
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, status
@@ -50,7 +50,9 @@ class AskRequest(BaseModel):
     question: str = Field(
         ...,
         description="The incident question to ask the RAG assistant.",
-        examples=["What caused GitHub's DNS outage, and how did the response make the impact worse?"],
+        examples=[
+            "What caused GitHub's DNS outage, and how did the response make the impact worse?"
+        ],
     )
 
 
@@ -103,4 +105,4 @@ async def ask(request: AskRequest) -> AskResponse:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while generating answer: {str(e)}",
-        )
+        ) from e

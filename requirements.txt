@@ -22,4 +22,9 @@ pandas
 litellm
 langchain-litellm
 fastapi
-uvicorn
+uvicorn
+black
+isort
+flake8
+ruff
+
