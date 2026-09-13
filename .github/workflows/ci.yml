@@ -26,20 +26,24 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          uv pip install -r requirements.txt
+          uv pip install --system -r requirements.txt
 
       - name: Run Ruff Linter
         run: |
-          uv run ruff check .
+          ruff check .
 
       - name: Run Black Formatter Check
         run: |
-          uv run black . --check
+          black . --check
 
       - name: Run isort Import Check
         run: |
-          uv run isort . --check
+          isort . --check
 
       - name: Run Flake8 Check
         run: |
-          uv run flake8 .
+          flake8 .
+
+      - name: Run Unit Tests
+        run: |
+          python -m unittest discover -s tests
