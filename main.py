@@ -1,6 +1,6 @@
-"""Week 3: SRE Postmortem RAG Assistant FastAPI Application with Input Guardrails.
+"""Week 4: SRE Postmortem RAG Assistant FastAPI Application with Upstash Multi-Turn Memory.
 
-Serves the RAG pipeline with PII redaction and prompt-injection detection guardrails.
+Serves the RAG pipeline with guardrails and session memory backed by Upstash Redis.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel, Field
 
 from guardrails import detect_prompt_injection, redact_pii
+from memory import memory
 from week1_rag import (
     PROJECT_ROOT,
     TOP_K,
@@ -40,8 +41,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(
     title="SRE Postmortem RAG Assistant",
-    description="A RAG assistant for querying SRE incident postmortems with input guardrails.",
-    version="0.3.0",
+    description="A RAG assistant for querying SRE postmortems with guardrails and multi-turn memory.",
+    version="0.4.0",
     lifespan=lifespan,
 )
 
@@ -54,6 +55,11 @@ class AskRequest(BaseModel):
             "What caused GitHub's DNS outage, and how did the response make the impact worse?"
         ],
     )
+    session_id: str | None = Field(
+        None,
+        description="Optional session identifier to maintain multi-turn conversation history.",
+        examples=["session-uuid-101"],
+    )
 
 
 class AskResponse(BaseModel):
@@ -63,6 +69,8 @@ class AskResponse(BaseModel):
     pii_redacted: bool = Field(
         False, description="Whether PII was detected and redacted from the question."
     )
+    session_id: str | None = Field(None, description="Session ID used for conversation history.")
+    history_turns: int = Field(0, description="Number of historical turns included in LLM context.")
 
 
 class HealthResponse(BaseModel):
@@ -77,7 +85,7 @@ async def health_check() -> HealthResponse:
 
 @app.post("/ask", response_model=AskResponse, tags=["RAG Assistant"])
 async def ask(request: AskRequest) -> AskResponse:
-    """Retrieve postmortem excerpts and generate a grounded answer after applying guardrails."""
+    """Retrieve postmortem excerpts and generate a grounded answer after applying guardrails and session memory."""
     raw_question = request.question.strip()
     if not raw_question:
         raise HTTPException(
@@ -103,18 +111,29 @@ async def ask(request: AskRequest) -> AskResponse:
             detail="Vector store is not initialized.",
         )
 
+    # 3. Retrieve Session History (if session_id provided)
+    session_id = request.session_id.strip() if request.session_id else None
+    history = memory.get_history(session_id) if session_id else []
+    history_turns = len(history)
+
     try:
         retrieved_docs = vector_store.similarity_search(sanitized_question, k=TOP_K)
         context = format_context(retrieved_docs)
-        answer, model_used = generate_answer(sanitized_question, context)
+        answer, model_used = generate_answer(sanitized_question, context, history=history)
         # Deduplicate sources while preserving order
         sources = list(dict.fromkeys(doc.metadata["source"] for doc in retrieved_docs))
+
+        # 4. Save new turn to conversation memory
+        if session_id:
+            memory.add_turn(session_id, sanitized_question, answer)
 
         return AskResponse(
             answer=answer,
             sources=sources,
             model=model_used,
             pii_redacted=pii_redacted,
+            session_id=session_id,
+            history_turns=history_turns,
         )
     except Exception as e:
         raise HTTPException(
