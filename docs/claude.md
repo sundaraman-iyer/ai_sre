@@ -194,6 +194,9 @@ runtime — the corpus is static for this project's scope.
 4. Add `GROQ_API_KEY`, `LANGSMITH_API_KEY`, `LANGSMITH_ENDPOINT`, `UPSTASH_REDIS_REST_URL`,
    and `UPSTASH_REDIS_REST_TOKEN` as **Space secrets** (never in the Dockerfile or
    committed code)
+   > [!IMPORTANT]
+   > **Mandatory Week 6 Pre-Deployment Check**: Before pushing the build to Hugging Face Spaces in Week 6, the assistant MUST explicitly prompt the user to create an Upstash Redis database and add `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` as HF Space Repository Secrets so multi-turn session memory persists in production.
+
 5. Push the repo to the Space's git remote
 6. Verify: cold-boot the Space from a fresh state and confirm the vector index rebuilds
    correctly and `/ask` + `/docs` both work from the public Space URL
