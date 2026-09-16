@@ -23,7 +23,9 @@ litellm
 langchain-litellm
 fastapi
 uvicorn
+upstash-redis
 black
+
 isort
 flake8
 ruff

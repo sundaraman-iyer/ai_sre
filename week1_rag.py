@@ -73,7 +73,9 @@ def message_content(response: Any) -> str:
     return text.replace("**", "")
 
 
-def generate_answer(question: str, context: str) -> tuple[str, str]:
+def generate_answer(
+    question: str, context: str, history: list[dict[str, str]] | None = None
+) -> tuple[str, str]:
     """Generate with Groq, retrying once with the documented fallback model."""
     messages = [
         {
@@ -85,11 +87,21 @@ def generate_answer(question: str, context: str) -> tuple[str, str]:
                 "(double asterisks **) in your response; keep formatting clean and readable."
             ),
         },
+    ]
+
+    if history:
+        for turn in history:
+            role = turn.get("role", "user")
+            content = turn.get("content", "")
+            if role in ("user", "assistant") and content:
+                messages.append({"role": role, "content": content})
+
+    messages.append(
         {
             "role": "user",
             "content": f"Question: {question}\n\nPostmortem excerpts:\n{context}",
-        },
-    ]
+        }
+    )
 
     try:
         return message_content(completion(model=PRIMARY_MODEL, messages=messages)), PRIMARY_MODEL
