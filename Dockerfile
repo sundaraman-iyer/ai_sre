@@ -21,8 +21,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy dependency files
 COPY pyproject.toml requirements.txt ./
 
-# Install Python dependencies without cache to minimize layer size
+# Install CPU-only PyTorch first to eliminate 2.5GB CUDA GPU bloat and drop RAM usage below 150MB
 RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r requirements.txt
 
 # Pre-download sentence-transformers model to optimize startup time
@@ -32,7 +33,7 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 RUN chmod -R 777 /tmp
 
 # Copy application files
-COPY main.py week1_rag.py guardrails.py memory.py ./
+COPY main.py week1_rag.py guardrails.py memory.py app.py ./
 COPY data/ ./data/
 COPY evals/ ./evals/
 
