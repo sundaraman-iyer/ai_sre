@@ -1,30 +1,34 @@
 FROM python:3.12-slim
 
-# Set environment variables
+# Memory & CPU optimizations for 512MB RAM free tier limits (Render/Koyeb)
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONMALLOC=malloc \
+    OMP_NUM_THREADS=1 \
+    MKL_NUM_THREADS=1 \
+    TORCH_NUM_THREADS=1 \
+    OPENBLAS_NUM_THREADS=1 \
     HF_HOME=/tmp/huggingface \
-    PORT=8000
+    PORT=10000
 
 WORKDIR /app
 
-# Install system dependencies
+# Install minimal system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency files
 COPY pyproject.toml requirements.txt ./
 
-# Install Python dependencies
+# Install Python dependencies without cache to minimize layer size
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Pre-download sentence-transformers model to optimize container startup time
+# Pre-download sentence-transformers model to optimize startup time
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
 
-# Set permissions for cache directory
+# Set permissions for HF cache directory
 RUN chmod -R 777 /tmp
 
 # Copy application files
@@ -33,7 +37,7 @@ COPY data/ ./data/
 COPY evals/ ./evals/
 
 # Expose default port
-EXPOSE 8000
+EXPOSE 10000
 
 # Run FastAPI app with Uvicorn respecting dynamic PORT environment variable
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"]
