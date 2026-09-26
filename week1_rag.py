@@ -15,9 +15,9 @@ from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_core.documents import Document
 from langchain_core.vectorstores import InMemoryVectorStore
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from litellm import completion
 
@@ -51,7 +51,7 @@ def build_vector_store(documents: list[Document]) -> InMemoryVectorStore:
     """Chunk the snapshot and index it with fully local embeddings."""
     splitter = RecursiveCharacterTextSplitter(chunk_size=700, chunk_overlap=100)
     chunks = splitter.split_documents(documents)
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embeddings = FastEmbedEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     store = InMemoryVectorStore(embedding=embeddings)
     store.add_documents(chunks)
     return store

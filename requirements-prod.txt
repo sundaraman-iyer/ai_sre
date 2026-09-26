@@ -6,13 +6,13 @@ python-dotenv>=1.2.3
 # LLM inference (Groq via LiteLLM)
 litellm>=1.100.1
 
-# Embeddings (local, CPU-only)
-sentence-transformers>=6.0.1
+# Embeddings: ONNX-based, no torch dependency (~50MB vs ~300MB for sentence-transformers)
+fastembed>=0.4.1
+langchain-community>=0.3.0
 
 # Vector store & RAG
 langchain-core>=1.4.0
 langchain-text-splitters>=1.1.2
-langchain-huggingface>=1.2.2
 
 # Multi-turn memory (Upstash Redis REST)
 upstash-redis>=1.8.0

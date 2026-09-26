@@ -8,6 +8,7 @@ dependencies = [
     "black>=24.0.0",
     "faiss-cpu>=1.15.0",
     "fastapi>=0.115.0",
+    "fastembed>=0.8.1",
     "flake8>=7.0.0",
     "gradio>=4.0.0",
     "ipykernel>=7.3.0",
