@@ -12,7 +12,7 @@ import gradio as gr
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
-from main import AskRequest, app as fastapi_app, ask
+import main
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 load_dotenv(PROJECT_ROOT / ".env")
@@ -26,8 +26,8 @@ async def chat_handler(message: str, history: list[list[str]], session_id: str) 
     clean_session = session_id.strip() if session_id and session_id.strip() else "hf-space-session"
 
     try:
-        req = AskRequest(question=message.strip(), session_id=clean_session)
-        response = await ask(req)
+        req = main.AskRequest(question=message.strip(), session_id=clean_session)
+        response = await main.ask(req)
 
         answer_text = response.answer
         if response.sources:
@@ -92,4 +92,4 @@ with gr.Blocks(title="SRE Postmortem RAG Assistant") as demo:
     clear_btn.click(lambda: None, None, chatbot, queue=False)
 
 # Mount Gradio Blocks UI onto the main FastAPI app for Hugging Face Spaces
-app = gr.mount_gradio_app(app=fastapi_app, blocks=demo, path="/")
+app = gr.mount_gradio_app(app=main.app, blocks=demo, path="/")
