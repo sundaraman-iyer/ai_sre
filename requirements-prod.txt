@@ -1,0 +1,25 @@
+# Core API server
+fastapi>=0.115.0
+uvicorn>=0.30.0
+python-dotenv>=1.2.3
+
+# LLM inference (Groq via LiteLLM)
+litellm>=1.100.1
+
+# Embeddings (local, CPU-only)
+sentence-transformers>=6.0.1
+
+# Vector store & RAG
+langchain-core>=1.4.0
+langchain-text-splitters>=1.1.2
+langchain-huggingface>=1.2.2
+
+# Multi-turn memory (Upstash Redis REST)
+upstash-redis>=1.8.0
+
+# Evaluation tracking
+langsmith>=0.12.4
+
+# Document loading
+pypdf>=6.18.0
+tiktoken>=0.14.0
