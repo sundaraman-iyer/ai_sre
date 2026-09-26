@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SRE Postmortem RAG — Live Endpoint Evaluation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; }
+  header { background: linear-gradient(135deg, #161b22 0%, #1f2937 100%); border-bottom: 1px solid #30363d; padding: 32px 48px; }
+  header h1 { font-size: 24px; font-weight: 700; color: #f0f6fc; margin-bottom: 8px; }
+  header .meta { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px; }
+  header .badge { background: #21262d; border: 1px solid #30363d; border-radius: 20px; padding: 4px 14px; font-size: 12px; color: #8b949e; }
+  header .badge span { color: #3fb950; font-weight: 600; }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin: 40px 0 16px; }
+  .section-header h2 { font-size: 18px; font-weight: 600; color: #f0f6fc; }
+  .section-header .pill { background: #1f6feb22; border: 1px solid #1f6feb66; color: #58a6ff; border-radius: 12px; padding: 2px 10px; font-size: 12px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+  .card-header { background: #1c2128; padding: 16px 20px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .card-header .q-number { background: #1f6feb; color: #fff; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+  .card-header .question { font-size: 14px; font-weight: 600; color: #f0f6fc; line-height: 1.5; }
+  .card-body { padding: 20px; }
+  .answer { font-size: 14px; line-height: 1.7; color: #c9d1d9; white-space: pre-wrap; }
+  .sources { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .source-chip { background: #0d419d22; border: 1px solid #1f6feb44; color: #79c0ff; border-radius: 6px; padding: 3px 10px; font-size: 11px; font-family: 'SF Mono', 'Fira Code', monospace; }
+  .status-ok { color: #3fb950; font-size: 11px; font-weight: 600; }
+  .summary-bar { background: #161b22; border: 1px solid #3fb95044; border-radius: 12px; padding: 20px 28px; margin-bottom: 32px; display: flex; gap: 40px; flex-wrap: wrap; }
+  .stat { text-align: center; }
+  .stat .value { font-size: 32px; font-weight: 700; color: #3fb950; }
+  .stat .label { font-size: 12px; color: #8b949e; margin-top: 4px; }
+  footer { text-align: center; padding: 32px; color: #484f58; font-size: 12px; border-top: 1px solid #21262d; margin-top: 48px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔍 SRE Postmortem RAG Assistant — Live Endpoint Evaluation</h1>
+  <div style="font-size:13px;color:#8b949e;margin-top:6px;">
+    Endpoint: <code style="color:#79c0ff;">https://ai-sre-1-9ldq.onrender.com/ask</code>
+  </div>
+  <div class="meta">
+    <div class="badge">Date: <span>2026-09-26</span></div>
+    <div class="badge">Questions: <span>18 / 18</span></div>
+    <div class="badge">HTTP Status: <span>200 OK (all)</span></div>
+    <div class="badge">Session: <span>eval-run-001</span></div>
+    <div class="badge">Embedding: <span>fastembed / all-MiniLM-L6-v2 (ONNX)</span></div>
+    <div class="badge">LLM: <span>Groq via LiteLLM</span></div>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="summary-bar">
+    <div class="stat"><div class="value">18</div><div class="label">Questions Asked</div></div>
+    <div class="stat"><div class="value">18</div><div class="label">Successful Responses</div></div>
+    <div class="stat"><div class="value">0</div><div class="label">Errors</div></div>
+    <div class="stat"><div class="value">6</div><div class="label">Postmortems in Corpus</div></div>
+    <div class="stat"><div class="value">~120MB</div><div class="label">Runtime RAM (Render Free)</div></div>
+  </div>
+
+  <!-- GitHub DNS -->
+  <div class="section-header">
+    <h2>GitHub DNS Outage</h2>
+    <div class="pill">3 questions</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q1</span>
+      <span class="question">What root cause initiated GitHub's DNS outage?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The outage began when a Puppet manifest bug caused the authoritative nameserver to be restarted after an IP‑address change, while the caching nameserver was not restarted. This mismatch triggered DNS query timeouts and led to the subsequent failures [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">github_dns_outage.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q2</span>
+      <span class="question">How did the incident response actions make the GitHub DNS outage worse?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">During the response, engineers triggered a deployment that rebuilt the DNS zone file by calling an internal provisioning API—an API that itself relied on DNS. Because DNS was already failing, the rebuild produced a corrupt zone file that returned NXDOMAIN for many records. The corrupted file caused many processes on the file-servers to spawn and consume all available memory, further extending the outage's duration. In short, the redeployment meant to fix the problem actually introduced a bad zone file and memory exhaustion, worsening the incident [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">github_dns_outage.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q3</span>
+      <span class="question">What was the total downtime duration reported for GitHub's DNS incident?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">GitHub reported a total downtime of 1 hour and 35 minutes for the DNS incident [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">github_dns_outage.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CircleCI -->
+  <div class="section-header">
+    <h2>CircleCI Schema Deploy Incident</h2>
+    <div class="pill">3 questions</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q4</span>
+      <span class="question">What deployment change triggered the CircleCI job-distribution outage?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The outage was triggered when a deployment altered the type of a PostgreSQL field used by CircleCI's job‑distribution service. The new deployment wrote new rows with the new field type, while existing rows still had the old type, causing strict schema validation to fail on every distributor scan and halting job distribution [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">circleci_schema_deploy.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q5</span>
+      <span class="question">Why did CircleCI's job-distribution service fail on every distributor scan?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The deployment altered the data type of a PostgreSQL column that the job‑distribution service reads. After the change, newly written rows used the new column type while existing rows still had the old type. When the service scanned the table, its strict schema validation encountered rows with mismatched types, causing the validation to fail on every scan and halting distribution of work [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">circleci_schema_deploy.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q6</span>
+      <span class="question">Why was a simple rollback insufficient to fix the CircleCI deployment incident?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">A simple rollback could not restore service because the deployment had already written data using the new column type. When the change was undone, those rows—created between the two deployments—became unreadable by the original schema. Consequently, the service could not resume normal operation simply by rolling back; it required a hand‑deployed build that ignored the problematic field and manual scaling to recover the data inconsistency [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">circleci_schema_deploy.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- AWS Seoul -->
+  <div class="section-header">
+    <h2>AWS Seoul DNS Config Incident</h2>
+    <div class="pill">3 questions</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q7</span>
+      <span class="question">What configuration mistake caused the AWS Seoul region EC2 DNS outage?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The outage was caused by a configuration change that removed the setting that defines the minimum healthy‑host count for the EC2 DNS resolver fleet in the Seoul region. Without this setting, the fleet fell back to a very low default, causing the healthy‑host count to drop and resulting in failed in‑VPC DNS queries for about 84 minutes [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+        <span class="source-chip">github_dns_outage.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q8</span>
+      <span class="question">How long did in-VPC DNS failures persist during the AWS Seoul EC2 incident?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The in‑VPC DNS queries failed for about 84 minutes during the AWS Seoul EC2 DNS resolver incident [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+        <span class="source-chip">github_dns_outage.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q9</span>
+      <span class="question">What remediations did AWS implement after the Seoul DNS resolver incident?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">AWS responded by adding two safeguards: a semantic configuration‑validation step to catch erroneous changes, and an hourly throttling limit on how many DNS‑resolver hosts could be removed at once [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+        <span class="source-chip">github_dns_outage.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cloudflare Router -->
+  <div class="section-header">
+    <h2>Cloudflare Edge Router Outage</h2>
+    <div class="pill">2 questions</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q10</span>
+      <span class="question">What caused all Cloudflare edge routers to crash during their router configuration incident?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">A malformed router‑rule configuration was applied, and the bad router‑rule caused every Cloudflare edge router to crash, taking down the service [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+        <span class="source-chip">github_dns_outage.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q11</span>
+      <span class="question">How is the Cloudflare edge-router crash classified in postmortem records?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The Cloudflare edge‑router crash is classified as a configuration error in the post‑mortem record [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cloudflare Tiered Cache -->
+  <div class="section-header">
+    <h2>Cloudflare Tiered Cache Incident</h2>
+    <div class="pill">3 questions</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q12</span>
+      <span class="question">What HTTP error code was returned to users during the Cloudflare Tiered Cache incident?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The incident caused some requests to return HTTP status 530 [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q13</span>
+      <span class="question">What was the total impact duration and peak error rate during Cloudflare's Tiered Cache incident?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The Tiered Cache incident impacted the service for nearly six hours, and at its worst about 5% of requests were failing (the peak error rate) [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q14</span>
+      <span class="question">Why did Cloudflare's testing fail to catch the Tiered Cache bug before production?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">Cloudflare's post‑mortem says the bug was missed because the test environment did not exercise the relevant code path. The change triggered a blind spot in the test suite – the problem was not observed when the change was released to the test environment – and the overall system complexity made it hard to catch it before production. [Source 1]</div>
+      <div class="sources">
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">github_dns_outage.md</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- GitHub DB Health Check -->
+  <div class="section-header">
+    <h2>GitHub Database Health Check (August 2024)</h2>
+    <div class="pill">3 questions</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q15</span>
+      <span class="question">What caused GitHub.com's read operations to fail in August 2024?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">GitHub.com's read operations failed because a configuration change that was deployed to the GitHub.com databases altered how the routing‑service health‑check pings were answered. The change caused the production read‑only endpoint to be marked unhealthy and become inaccessible, blocking all read traffic for about 36 minutes until the change was reverted. [Source 1]</div>
+      <div class="sources">
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">github_dns_outage.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">circleci_schema_deploy.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q16</span>
+      <span class="question">How long was GitHub.com unavailable for read operations during the August 2024 database incident?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">GitHub.com's read operations were unavailable for 36 minutes during the August 2024 database incident [Source 1].</div>
+      <div class="sources">
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">github_dns_outage.md</span>
+        <span class="source-chip">circleci_schema_deploy.md</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q17</span>
+      <span class="question">What remediations did GitHub adopt after the August 2024 database routing health check incident?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The only remediation mentioned in the post‑mortem is that GitHub reverted the configuration change that had altered the routing‑service health‑check behaviour, restoring the production read‑only endpoint to a healthy state and ending the 36‑minute outage. [Source 1]</div>
+      <div class="sources">
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">circleci_schema_deploy.md</span>
+        <span class="source-chip">cloudflare_router_config.md</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cross-corpus -->
+  <div class="section-header">
+    <h2>Cross-Corpus Synthesis</h2>
+    <div class="pill">1 question</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="q-number">Q18</span>
+      <span class="question">What are common themes in configuration incidents across AWS and Cloudflare?</span>
+      <span class="status-ok">✓ 200</span>
+    </div>
+    <div class="card-body">
+      <div class="answer">The incidents from both AWS and Cloudflare share several recurring themes:
+
+1. A single configuration change triggered a large‑scale outage – In each case the root cause was a config update that altered normal service behaviour (the Cloudflare edge‑router rule, the Cloudflare Tiered‑Cache setting, the GitHub database routing health‑check, and the AWS Seoul EC2 DNS resolver minimum‑healthy‑host setting) [Source 1][Source 2][Source 3][Source 4].
+
+2. Insufficient validation or testing of the change – Cloudflare's Tiered‑Cache incident notes a "blind spot in tests" and that the problem was not observed in the test environment. AWS's post‑mortem lists "semantic configuration validation" as a remediation, implying that validation was missing when the change was applied [Source 2][Source 4].
+
+3. Complexity or hidden dependencies that made the impact hard to predict – The Cloudflare edge‑router outage resulted from a "bad router‑rule configuration" that affected every edge router, while the Tiered‑Cache change caused unexpected HTTP 530 errors because of system complexity [Source 1][Source 2][Source 3].
+
+4. Remediation involved rolling back or restoring the original configuration, followed by added safeguards – GitHub reverted the config change, AWS restored capacity and added validation and throttling of host removal [Source 3][Source 4].
+
+These themes illustrate that configuration‑driven incidents often stem from inadequate testing or validation of changes, the hidden complexity of the systems they affect, and the need for stricter safeguards and quick rollback mechanisms.</div>
+      <div class="sources">
+        <span class="source-chip">cloudflare_router_config.md</span>
+        <span class="source-chip">cloudflare_tiered_cache.md</span>
+        <span class="source-chip">github_database_health_check.md</span>
+        <span class="source-chip">aws_seoul_dns_config.md</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Generated 2026-09-26 · SRE Postmortem RAG Assistant · Render.com Free Tier · fastembed ONNX · Groq LLM · Upstash Redis
+</footer>
+
+</body>
+</html>

@@ -12,7 +12,9 @@ license: mit
 
 # Production-Grade SRE Postmortem RAG Assistant
 
-An enterprise-ready, zero-cost SRE Postmortem Retrieval-Augmented Generation (RAG) Assistant powered by **FastAPI**, **LiteLLM / Groq**, **HuggingFace Embeddings**, **Upstash Redis Session Memory**, **Input Security Guardrails**, and **LangSmith LLM-as-a-Judge Evaluation**.
+An enterprise-ready, zero-cost SRE Postmortem Retrieval-Augmented Generation (RAG) Assistant powered by **FastAPI**, **LiteLLM / Groq**, **fastembed ONNX Embeddings**, **Upstash Redis Session Memory**, **Input Security Guardrails**, and **LangSmith LLM-as-a-Judge Evaluation**.
+
+> **🚀 Live on Render.com** → [https://ai-sre-1-9ldq.onrender.com/docs](https://ai-sre-1-9ldq.onrender.com/docs)
 
 ---
 
@@ -216,35 +218,104 @@ curl -X POST "http://localhost:8000/ask" \
 
 ---
 
-## 🐳 Docker Containerization & Deployment
+## 🌐 Live Deployment
 
-### Build & Run Docker Image Locally
+The assistant is publicly hosted on **Render.com** (free tier) — no setup needed.
+
+| Resource | URL |
+| :--- | :--- |
+| **Interactive API Docs (Swagger UI)** | [https://ai-sre-1-9ldq.onrender.com/docs](https://ai-sre-1-9ldq.onrender.com/docs) |
+| **Health Check** | [https://ai-sre-1-9ldq.onrender.com/health](https://ai-sre-1-9ldq.onrender.com/health) |
+| **Ask Endpoint** | `POST https://ai-sre-1-9ldq.onrender.com/ask` |
+
+> **Note**: Render free-tier services spin down after 15 minutes of inactivity. The first request may take ~30 seconds to cold-start.
+
+---
+
+## 🧪 Sample Questions to Try
+
+The corpus covers **6 real-world production incident postmortems**: GitHub DNS outage, GitHub August 2024 database incident, CircleCI schema deploy incident, AWS Seoul DNS config incident, Cloudflare edge router outage, and Cloudflare tiered cache incident.
+
+### Try via curl:
+
 ```bash
-# Build lightweight Docker image
-docker build -t ai-sre-rag:latest .
+# GitHub DNS Outage
+curl -X POST "https://ai-sre-1-9ldq.onrender.com/ask" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What root cause initiated GitHub'\''s DNS outage?", "session_id": "demo-1"}'
 
-# Run container exposing port 7860
-docker run -p 7860:7860 \
+# CircleCI Incident
+curl -X POST "https://ai-sre-1-9ldq.onrender.com/ask" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Why was a simple rollback insufficient to fix the CircleCI deployment incident?", "session_id": "demo-1"}'
+
+# AWS Seoul
+curl -X POST "https://ai-sre-1-9ldq.onrender.com/ask" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What remediations did AWS implement after the Seoul DNS resolver incident?", "session_id": "demo-1"}'
+
+# Cloudflare Tiered Cache
+curl -X POST "https://ai-sre-1-9ldq.onrender.com/ask" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What HTTP error code was returned during the Cloudflare Tiered Cache incident?", "session_id": "demo-1"}'
+
+# Cross-corpus synthesis
+curl -X POST "https://ai-sre-1-9ldq.onrender.com/ask" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What are common themes in configuration incidents across AWS and Cloudflare?", "session_id": "demo-1"}'
+```
+
+### Try via Swagger UI:
+1. Open **[https://ai-sre-1-9ldq.onrender.com/docs](https://ai-sre-1-9ldq.onrender.com/docs)**
+2. Click **POST /ask → Try it out**
+3. Paste any question below into the `question` field
+4. Set any `session_id` string to enable multi-turn memory across requests
+5. Click **Execute**
+
+### Full benchmark question set (18 questions, all tested live):
+
+| # | Question | Postmortem |
+|:--|:---------|:-----------|
+| 1 | What root cause initiated GitHub's DNS outage? | GitHub DNS |
+| 2 | How did the incident response actions make the GitHub DNS outage worse? | GitHub DNS |
+| 3 | What was the total downtime duration reported for GitHub's DNS incident? | GitHub DNS |
+| 4 | What deployment change triggered the CircleCI job-distribution outage? | CircleCI |
+| 5 | Why did CircleCI's job-distribution service fail on every distributor scan? | CircleCI |
+| 6 | Why was a simple rollback insufficient to fix the CircleCI deployment incident? | CircleCI |
+| 7 | What configuration mistake caused the AWS Seoul region EC2 DNS outage? | AWS Seoul |
+| 8 | How long did in-VPC DNS failures persist during the AWS Seoul EC2 incident? | AWS Seoul |
+| 9 | What remediations did AWS implement after the Seoul DNS resolver incident? | AWS Seoul |
+| 10 | What caused all Cloudflare edge routers to crash during their router configuration incident? | Cloudflare Router |
+| 11 | How is the Cloudflare edge-router crash classified in postmortem records? | Cloudflare Router |
+| 12 | What HTTP error code was returned to users during the Cloudflare Tiered Cache incident? | Cloudflare Cache |
+| 13 | What was the total impact duration and peak error rate during Cloudflare's Tiered Cache incident? | Cloudflare Cache |
+| 14 | Why did Cloudflare's testing fail to catch the Tiered Cache bug before production? | Cloudflare Cache |
+| 15 | What caused GitHub.com's read operations to fail in August 2024? | GitHub DB |
+| 16 | How long was GitHub.com unavailable for read operations during the August 2024 database incident? | GitHub DB |
+| 17 | What remediations did GitHub adopt after the August 2024 database routing health check incident? | GitHub DB |
+| 18 | What are common themes in configuration incidents across AWS and Cloudflare? | Cross-corpus |
+
+> Full live responses for all 18 questions: [`docs/artifacts/eval_responses.md`](docs/artifacts/eval_responses.md)
+
+---
+
+## 🐳 Docker & Local Deployment
+
+### Build & Run Locally
+```bash
+docker build -t ai-sre-rag:latest .
+docker run -p 10000:10000 \
   -e GROQ_API_KEY="your_groq_api_key" \
   -e UPSTASH_REDIS_REST_URL="your_upstash_url" \
   -e UPSTASH_REDIS_REST_TOKEN="your_upstash_token" \
   ai-sre-rag:latest
 ```
 
-### Deployment to Hugging Face Spaces
-1. Create a new Space on [Hugging Face Spaces](https://huggingface.co/spaces) selecting **Docker** as the SDK.
-2. Under **Space Settings $\rightarrow$ Repository Secrets**, add the following environment variables:
-   - `GROQ_API_KEY`
-   - `UPSTASH_REDIS_REST_URL`
-   - `UPSTASH_REDIS_REST_TOKEN`
-   - `LANGSMITH_API_KEY`
-   - `LANGSMITH_ENDPOINT`
-3. Push the repository to Hugging Face Spaces:
-```bash
-git remote add hf https://huggingface.co/spaces/YOUR_USERNAME/ai-sre-rag
-git push hf main
-```
-4. Access the live FastAPI Swagger UI on your Hugging Face Space URL!
+### Deploy to Render.com
+1. Fork this repository and connect it to [Render.com](https://render.com)
+2. Create a new **Web Service** pointing at your fork
+3. Set environment variables: `GROQ_API_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `LANGSMITH_API_KEY`
+4. Render detects the `Dockerfile` automatically and deploys
 
 ---
 

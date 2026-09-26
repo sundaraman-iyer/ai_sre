@@ -1,0 +1,200 @@
+[
+  {
+    "q": "What root cause initiated GitHub's DNS outage?",
+    "a": "The outage began when a Puppet manifest bug caused the authoritative nameserver to be restarted after an IP\u2011address change, while the caching nameserver was not restarted. This mismatch triggered DNS query timeouts and led to the subsequent failures\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "github_dns_outage.md",
+      "github_database_health_check.md",
+      "aws_seoul_dns_config.md",
+      "cloudflare_router_config.md"
+    ]
+  },
+  {
+    "q": "How did the incident response actions make the GitHub DNS outage worse?",
+    "a": "During the response, engineers triggered a deployment that rebuilt the DNS zone file by calling an internal provisioning API\u2014an API that itself relied on DNS. Because DNS was already failing, the rebuild produced a corrupt zone file that returned NXDOMAIN for many records. The corrupted file caused many processes on the file\u2011servers to spawn and consume all available memory, further extending the outage\u2019s duration. In short, the redeployment meant to fix the problem actually introduced a bad zone file and memory exhaustion, worsening the incident\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "github_dns_outage.md",
+      "github_database_health_check.md",
+      "aws_seoul_dns_config.md",
+      "cloudflare_tiered_cache.md"
+    ]
+  },
+  {
+    "q": "What was the total downtime duration reported for GitHub's DNS incident?",
+    "a": "GitHub reported a total downtime of 1 hour and 35 minutes for the DNS incident\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "github_dns_outage.md",
+      "github_database_health_check.md",
+      "aws_seoul_dns_config.md",
+      "cloudflare_tiered_cache.md"
+    ]
+  },
+  {
+    "q": "What deployment change triggered the CircleCI job-distribution outage?",
+    "a": "The outage was triggered when a deployment altered the type of a PostgreSQL field used by CircleCI\u2019s job\u2011distribution service. The new deployment wrote new rows with the new field type, while existing rows still had the old type, causing strict schema validation to fail on every distributor scan and halting job distribution\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "circleci_schema_deploy.md",
+      "cloudflare_router_config.md",
+      "cloudflare_tiered_cache.md",
+      "github_database_health_check.md"
+    ]
+  },
+  {
+    "q": "Why did CircleCI's job-distribution service fail on every distributor scan?",
+    "a": "The deployment altered the data type of a PostgreSQL column that the job\u2011distribution service reads. After the change, newly written rows used the new column type while existing rows still had the old type. When the service scanned the table, its strict schema validation encountered rows with mismatched types, causing the validation to fail on every scan and halting distribution of work\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "circleci_schema_deploy.md",
+      "github_database_health_check.md",
+      "cloudflare_router_config.md",
+      "cloudflare_tiered_cache.md"
+    ]
+  },
+  {
+    "q": "Why was a simple rollback insufficient to fix the CircleCI deployment incident?",
+    "a": "A simple rollback could not restore service because the deployment had already written data using the new column type. When the change was undone, those rows\u2014created between the two deployments\u2014became unreadable by the original schema. Consequently, the service could not resume normal operation simply by rolling back; it required a hand\u2011deployed build that ignored the problematic field and manual scaling to recover the data inconsistency\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "circleci_schema_deploy.md",
+      "cloudflare_router_config.md",
+      "cloudflare_tiered_cache.md",
+      "github_database_health_check.md"
+    ]
+  },
+  {
+    "q": "What configuration mistake caused the AWS Seoul region EC2 DNS outage?",
+    "a": "The outage was caused by a configuration change that removed the setting that defines the minimum healthy\u2011host count for the EC2 DNS resolver fleet in the Seoul region. Without this setting, the fleet fell back to a very low default, causing the healthy\u2011host count to drop and resulting in failed in\u2011VPC DNS queries for about 84 minutes\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "aws_seoul_dns_config.md",
+      "github_dns_outage.md",
+      "cloudflare_router_config.md",
+      "cloudflare_tiered_cache.md"
+    ]
+  },
+  {
+    "q": "How long did in-VPC DNS failures persist during the AWS Seoul EC2 incident?",
+    "a": "The in\u2011VPC DNS queries failed for about\u202f84\u202fminutes during the AWS Seoul EC2 DNS resolver incident\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "aws_seoul_dns_config.md",
+      "github_dns_outage.md",
+      "cloudflare_router_config.md",
+      "cloudflare_tiered_cache.md"
+    ]
+  },
+  {
+    "q": "What remediations did AWS implement after the Seoul DNS resolver incident?",
+    "a": "AWS responded by adding two safeguards: a semantic configuration\u2011validation step to catch erroneous changes, and an hourly throttling limit on how many DNS\u2011resolver hosts could be removed at once\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "aws_seoul_dns_config.md",
+      "github_dns_outage.md",
+      "cloudflare_tiered_cache.md",
+      "cloudflare_router_config.md"
+    ]
+  },
+  {
+    "q": "What caused all Cloudflare edge routers to crash during their router configuration incident?",
+    "a": "A malformed router\u2011rule configuration was applied, and the bad router\u2011rule caused every Cloudflare edge router to crash, taking down the service\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "cloudflare_router_config.md",
+      "cloudflare_tiered_cache.md",
+      "aws_seoul_dns_config.md",
+      "github_dns_outage.md"
+    ]
+  },
+  {
+    "q": "How is the Cloudflare edge-router crash classified in postmortem records?",
+    "a": "The Cloudflare edge\u2011router crash is classified as a configuration error in the post\u2011mortem record\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "cloudflare_router_config.md",
+      "cloudflare_tiered_cache.md",
+      "aws_seoul_dns_config.md",
+      "github_database_health_check.md"
+    ]
+  },
+  {
+    "q": "What HTTP error code was returned to users during the Cloudflare Tiered Cache incident?",
+    "a": "The incident caused some requests to return HTTP status\u202f530\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "cloudflare_tiered_cache.md",
+      "cloudflare_router_config.md",
+      "github_database_health_check.md",
+      "aws_seoul_dns_config.md"
+    ]
+  },
+  {
+    "q": "What was the total impact duration and peak error rate during Cloudflare's Tiered Cache incident?",
+    "a": "The Tiered Cache incident impacted the service for nearly six hours, and at its worst about\u202f5\u202f% of requests were failing (the peak error rate)\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "cloudflare_tiered_cache.md",
+      "cloudflare_router_config.md",
+      "aws_seoul_dns_config.md",
+      "github_database_health_check.md"
+    ]
+  },
+  {
+    "q": "Why did Cloudflare's testing fail to catch the Tiered Cache bug before production?",
+    "a": "Cloudflare\u2019s post\u2011mortem says the bug was missed because the test environment did not exercise the relevant code path.  The change triggered a blind spot in the test suite \u2013 the problem was not observed when the change was released to the test environment \u2013 and the overall system complexity made it hard to catch it before production.\u202f[Source\u202f1]",
+    "model": "",
+    "sources": [
+      "cloudflare_tiered_cache.md",
+      "cloudflare_router_config.md",
+      "github_database_health_check.md",
+      "github_dns_outage.md"
+    ]
+  },
+  {
+    "q": "What caused GitHub.com's read operations to fail in August 2024?",
+    "a": "GitHub.com's read operations failed because a configuration change that was deployed to the GitHub.com databases altered how the routing\u2011service health\u2011check pings were answered. The change caused the production read\u2011only endpoint to be marked unhealthy and become inaccessible, blocking all read traffic for about 36\u202fminutes until the change was reverted.\u202f[Source\u202f1]",
+    "model": "",
+    "sources": [
+      "github_database_health_check.md",
+      "github_dns_outage.md",
+      "cloudflare_tiered_cache.md",
+      "circleci_schema_deploy.md"
+    ]
+  },
+  {
+    "q": "How long was GitHub.com unavailable for read operations during the August 2024 database incident?",
+    "a": "GitHub.com\u2019s read operations were unavailable for\u202f36\u202fminutes during the August\u202f2024 database incident\u202f[Source\u202f1].",
+    "model": "",
+    "sources": [
+      "github_database_health_check.md",
+      "cloudflare_tiered_cache.md",
+      "github_dns_outage.md",
+      "circleci_schema_deploy.md"
+    ]
+  },
+  {
+    "q": "What remediations did GitHub adopt after the August 2024 database routing health check incident?",
+    "a": "The only remediation mentioned in the post\u2011mortem is that GitHub reverted the configuration change that had altered the routing\u2011service health\u2011check behaviour, restoring the production read\u2011only endpoint to a healthy state and ending the 36\u2011minute outage.\u202f[Source\u202f1]",
+    "model": "",
+    "sources": [
+      "github_database_health_check.md",
+      "cloudflare_tiered_cache.md",
+      "circleci_schema_deploy.md",
+      "cloudflare_router_config.md"
+    ]
+  },
+  {
+    "q": "What are common themes in configuration incidents across AWS and Cloudflare?",
+    "a": "The incidents from both AWS and Cloudflare share several recurring themes:\n\n1. A single configuration change triggered a large\u2011scale outage \u2013 In each case the root cause was a config update that altered normal service behaviour (the Cloudflare edge\u2011router rule, the Cloudflare Tiered\u2011Cache setting, the GitHub database routing health\u2011check, and the AWS Seoul EC2 DNS resolver minimum\u2011healthy\u2011host setting) and caused the affected system to become unavailable\u202f[Source\u202f1][Source\u202f2][Source\u202f3][Source\u202f4].\n\n2. Insufficient validation or testing of the change \u2013 Cloudflare\u2019s Tiered\u2011Cache incident notes a \u201cblind spot in tests\u201d and that the problem was not observed in the test environment. AWS\u2019s post\u2011mortem lists \u201csemantic configuration validation\u201d as a remediation, implying that validation was missing when the change was applied\u202f[Source\u202f2][Source\u202f4].\n\n3. Complexity or hidden dependencies that made the impact hard to predict \u2013 The Cloudflare edge\u2011router outage resulted from a \u201cbad router\u2011rule configuration\u201d that affected every edge router, while the Tiered\u2011Cache change caused unexpected HTTP\u202f530 errors because of system complexity. GitHub\u2019s routing health\u2011check change unintentionally marked the read\u2011only endpoint unhealthy, showing how a small config tweak can affect broader routing logic\u202f[Source\u202f1][Source\u202f2][Source\u202f3].\n\n4. Remediation involved rolling back or restoring the original configuration, followed by added safeguards \u2013 GitHub reverted the config change, AWS restored capacity and added validation and throttling of host removal, and the Cloudflare summaries imply that fixing the router rule restored service\u202f[Source\u202f3][Source\u202f4].\n\nThese themes illustrate that configuration\u2011driven incidents often stem from inadequate testing or validation of changes, the hidden complexity of the systems they affect, and the need for stricter safeguards and quick rollback mechanisms.",
+    "model": "",
+    "sources": [
+      "cloudflare_router_config.md",
+      "cloudflare_tiered_cache.md",
+      "github_database_health_check.md",
+      "aws_seoul_dns_config.md"
+    ]
+  }
+]
