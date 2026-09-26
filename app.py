@@ -6,15 +6,13 @@ alongside an interactive web chat interface.
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import gradio as gr
 from dotenv import load_dotenv
 from fastapi import HTTPException
 
-from main import AskRequest, ask  # isort: skip
-from main import app as fastapi_app  # isort: skip
+from main import AskRequest, app as fastapi_app, ask
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 load_dotenv(PROJECT_ROOT / ".env")
@@ -47,7 +45,7 @@ async def chat_handler(message: str, history: list[list[str]], session_id: str) 
 
 
 # Create interactive Gradio Blocks Interface
-with gr.Blocks(title="SRE Postmortem RAG Assistant", theme=gr.themes.Soft()) as demo:
+with gr.Blocks(title="SRE Postmortem RAG Assistant") as demo:
     gr.Markdown("""
         # SRE Postmortem RAG Assistant
         Query production incident postmortems with **PII Redaction**, **Prompt Injection Defense**,
@@ -93,11 +91,5 @@ with gr.Blocks(title="SRE Postmortem RAG Assistant", theme=gr.themes.Soft()) as 
     )
     clear_btn.click(lambda: None, None, chatbot, queue=False)
 
-# Mount Gradio Blocks UI onto the main FastAPI app
+# Mount Gradio Blocks UI onto the main FastAPI app for Hugging Face Spaces
 app = gr.mount_gradio_app(app=fastapi_app, blocks=demo, path="/")
-
-if __name__ == "__main__":
-    import uvicorn
-
-    port = int(os.getenv("PORT", 7860))
-    uvicorn.run(app, host="0.0.0.0", port=port)
