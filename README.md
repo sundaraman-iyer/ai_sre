@@ -1,3 +1,15 @@
+---
+title: SRE Postmortem RAG Assistant
+emoji: 🛠️
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: 6.28.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # Production-Grade SRE Postmortem RAG Assistant
 
 An enterprise-ready, zero-cost SRE Postmortem Retrieval-Augmented Generation (RAG) Assistant powered by **FastAPI**, **LiteLLM / Groq**, **HuggingFace Embeddings**, **Upstash Redis Session Memory**, **Input Security Guardrails**, and **LangSmith LLM-as-a-Judge Evaluation**.
